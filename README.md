@@ -22,6 +22,7 @@
 - 🔒 **6 Danh Mục Kiểm Duyệt Toàn Diện:** Bao phủ chặt chẽ mọi rủi ro an toàn: `NSFW`, `GORE_VIOLENCE`, `WEAPONS_EXPLOSIVES`, `CHILD_ABUSE`, `ANIMAL_ABUSE`, và `BLACKLIST`.
 - 🔄 **Realtime Hot-Reload:** Thêm/sửa từ khóa trong `blacklist.txt` hoặc `whitelist.txt` có **hiệu lực tức thì mà KHÔNG CẦN restart ComfyUI** (nhờ cơ chế `IS_CHANGED` tracking hash và mtime).
 - 🛡️ **Fail-Closed Security & Anti-Bypass:** Ràng buộc schema JSON nghiêm ngặt, chống duplicate keys, vô hiệu hóa jailbreak prompt (`/no_think`), tự động **Fail-Closed** (chặn an toàn) nếu phát hiện bất kỳ phản hồi bất thường nào.
+- 🌍 **Dịch sang tiếng Anh sau kiểm duyệt:** Bật `translate_to_english` để dịch prompt an toàn sang tiếng Anh bằng cùng model Qwen. Lingua nhận diện ngôn ngữ cục bộ trên CPU để prompt đã là tiếng Anh được chuyển tiếp ngay, không tốn thêm một lượt Qwen. Prompt bị chặn sẽ không bao giờ được dịch hoặc truyền sang node tiếp theo.
 
 ---
 
@@ -74,7 +75,7 @@ ComfyUI/models/text_encoders/
 ```
 
 ### Bước 3: Thêm Node vào Workflow
-1. Mở giao diện ComfyUI, nhấp chuột phải: **safety** ➔ **Detect NSFW Text**.
+1. Mở giao diện ComfyUI, nhấp chuột phải: **safety** ➔ **detect-nsfw-trans**.
 2. Nối dây đầu vào `prompt` từ Text Primitive hoặc Prompt Box.
 3. Nối đầu ra `prompt` an toàn sang node `CLIPTextEncode` (hoặc KSampler).
 4. *(Tùy chọn)* Nối model CLIP từ node `CLIPLoader` để tái sử dụng VRAM (0.00s load time).
@@ -89,6 +90,7 @@ ComfyUI/models/text_encoders/
 | **`prompt`** | `STRING` | Có | Chuỗi prompt người dùng cần kiểm duyệt (hỗ trợ multiline). |
 | **`clip_name`** | `STRING` | Có | Tên file model CLIP (Mặc định: `qwen3vl_8b_int8_convrot.safetensors`). |
 | **`language_filter`** | `COMBO` | Có | `all_languages` (mặc định đa ngôn ngữ) hoặc `english_only` (chỉ tiếng Anh). |
+| **`translate_to_english`** | `BOOLEAN` | Có | Sau khi kiểm duyệt thành công, Lingua giữ nguyên prompt tiếng Anh; chỉ prompt không phải tiếng Anh mới được gửi tới Qwen để dịch. |
 | **`clip`** | `CLIP` | Không | Kết nối từ node `CLIPLoader` để dùng chung cache mô hình. |
 | **`blacklist`** | `STRING` | Không | Danh sách từ khóa cấm bổ sung trực tiếp trên giao diện widget. |
 | **`whitelist`** | `STRING` | Không | Danh sách từ khóa tin cậy để Fast-Pass bỏ qua kiểm duyệt GPU. |
@@ -96,11 +98,14 @@ ComfyUI/models/text_encoders/
 ### Outputs
 | Tên Cổng | Kiểu Dữ Liệu | Mô Tả |
 | :--- | :---: | :--- |
-| **`prompt`** | `STRING` | Chuỗi prompt gốc được chuyển tiếp an toàn nếu không vi phạm. |
+| **`prompt`** | `STRING` | Chuỗi prompt an toàn; là bản tiếng Anh khi bật `translate_to_english`, nếu không sẽ giữ nguyên văn. |
 | **`report`** | `STRING` | Báo cáo chi tiết định dạng JSON (`blocked`, `categories`, `reason`). |
 
 > [!IMPORTANT]
 > **Cơ Chế Ngắt Luồng Tức Thì:** Khi phát hiện vi phạm chính sách, node sẽ chủ động ném ngoại lệ `NSFWDetectedError`. Quá trình sinh ảnh phía sau lập tức bị chặn đứng để bảo vệ hệ thống và tiết kiệm tài nguyên GPU.
+
+> [!NOTE]
+> Để nhận prompt bằng ngôn ngữ bất kỳ rồi dịch sang tiếng Anh, hãy giữ `language_filter = all_languages` và bật `translate_to_english`. Chế độ `english_only` vẫn chủ động từ chối đầu vào không phải tiếng Anh trước bước dịch.
 
 ---
 
@@ -150,7 +155,7 @@ Node hỗ trợ 2 file cấu hình nằm ngay trong thư mục node:
 Repo đi kèm sẵn file cấu hình workflow hoàn chỉnh:
 - [workflow_nsfw_detect_example.json](workflow_nsfw_detect_example.json)
 
-Kéo thả trực tiếp file JSON trên vào giao diện web ComfyUI để trải nghiệm ngay quy trình kết nối chuẩn từ `CLIPLoader` ➔ `Detect NSFW Text` ➔ `PreviewAny`.
+Kéo thả trực tiếp file JSON trên vào giao diện web ComfyUI để trải nghiệm ngay quy trình kết nối chuẩn từ `CLIPLoader` ➔ `detect-nsfw-trans` ➔ `PreviewAny`.
 
 ---
 

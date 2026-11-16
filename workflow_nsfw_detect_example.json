@@ -9,9 +9,9 @@
         0
       ]
     },
-    "class_type": "DetectNSFWText",
+    "class_type": "DetectNSFWTrans",
     "_meta": {
-      "title": "Detect NSFW Text"
+      "title": "detect-nsfw-trans"
     }
   },
   "3": {
